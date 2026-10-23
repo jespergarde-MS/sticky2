@@ -20,19 +20,13 @@ img { display: block; width: 375px; height: auto; }
     z-index: 1000;
     background: #fff;
     transform: translateY(-100%);
-    transition: transform 300ms ease;
     pointer-events: none;
     visibility: hidden;
     will-change: transform;
 }
-.sticky-nav.is-active { visibility: visible; }
-.sticky-nav.is-visible {
-    transform: translateY(0);
+.sticky-nav.is-active {
+    visibility: visible;
     pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .sticky-nav { transition: none; }
 }
 </style>
 </head>
@@ -40,9 +34,10 @@ img { display: block; width: 375px; height: auto; }
 <div class="page">
     <img src="stripe.png" alt="">
 
-    <div class="nav-wrapper" id="navWrapper">
+    <div class="nav-wrapper">
         <div class="nav">
-            <img src="nav.png" alt="">
+            <img src="nav-top.png" alt="">
+            <img id="navBot" src="nav-bot.png" alt="">
         </div>
     </div>
 
@@ -50,36 +45,35 @@ img { display: block; width: 375px; height: auto; }
 </div>
 
 <div class="sticky-nav" id="stickyNav" aria-hidden="true">
-    <img src="stripe.png" alt="">
-    <img src="nav.png" alt="">
+    <div class="sticky-nav-top" id="stickyNavTop">
+        <img src="stripe.png" alt="">
+        <img src="nav-top.png" alt="">
+    </div>
+    <img src="nav-bot.png" alt="">
 </div>
 
 <script>
-const navWrapper = document.getElementById('navWrapper');
+const navBot = document.getElementById('navBot');
 const stickyNav = document.getElementById('stickyNav');
+const stickyNavTop = document.getElementById('stickyNavTop');
 
 let lastScrollY = window.scrollY;
 let lastDirection = null;
-let stickyNavVisible = false;
+let stickyNavPinned = false;
 let stickyNavAnimation = null;
 
-function originalNavHasScrolledAway() {
-    return navWrapper.getBoundingClientRect().bottom <= 0;
+function stickyNavTopHeight() {
+    return stickyNavTop.getBoundingClientRect().height;
 }
 
-function transitionStickyNav(visible) {
-    if (stickyNavAnimation) stickyNavAnimation.cancel();
-
+function transitionStickyNav(targetY) {
     const currentTransform = getComputedStyle(stickyNav).transform;
     const currentY = currentTransform === 'none'
-        ? (visible ? -stickyNav.offsetHeight : 0)
+        ? -stickyNavTopHeight()
         : new DOMMatrix(currentTransform).m42;
-    const targetY = visible ? 0 : -stickyNav.offsetHeight;
 
-    if (visible) stickyNav.classList.add('is-visible');
-    else stickyNav.classList.remove('is-visible');
+    if (stickyNavAnimation) stickyNavAnimation.cancel();
 
-    stickyNav.style.transition = 'none';
     stickyNavAnimation = stickyNav.animate(
         [
             { transform: `translateY(${currentY}px)` },
@@ -92,39 +86,28 @@ function transitionStickyNav(visible) {
         }
     );
     stickyNavAnimation.onfinish = function () {
+        stickyNav.style.transform = `translateY(${targetY}px)`;
+        stickyNavAnimation.cancel();
         stickyNavAnimation = null;
-        stickyNav.style.transition = '';
-        stickyNav.style.transform = '';
-        if (!stickyNavVisible) stickyNav.classList.remove('is-active');
     };
 }
 
-function showStickyNav() {
-    if (stickyNavVisible || !originalNavHasScrolledAway()) return;
+function pinStickyNav() {
+    if (stickyNavPinned) return;
 
-    stickyNavVisible = true;
+    stickyNavPinned = true;
     stickyNav.classList.add('is-active');
     stickyNav.setAttribute('aria-hidden', 'false');
-
-    transitionStickyNav(true);
-}
-
-function hideStickyNav() {
-    if (!stickyNavVisible) return;
-
-    stickyNavVisible = false;
-    stickyNav.setAttribute('aria-hidden', 'true');
-    transitionStickyNav(false);
+    stickyNav.style.transform = `translateY(${-stickyNavTopHeight()}px)`;
 }
 
 function resetStickyNav() {
-    stickyNavVisible = false;
+    stickyNavPinned = false;
     if (stickyNavAnimation) {
         stickyNavAnimation.cancel();
         stickyNavAnimation = null;
     }
-    stickyNav.classList.remove('is-active', 'is-visible');
-    stickyNav.style.transition = '';
+    stickyNav.classList.remove('is-active');
     stickyNav.style.transform = '';
     stickyNav.setAttribute('aria-hidden', 'true');
 }
@@ -136,20 +119,21 @@ window.addEventListener('scroll', function () {
     if (Math.abs(delta) < 1) return;
 
     const direction = delta > 0 ? 'down' : 'up';
-    const originalNavTop = navWrapper.getBoundingClientRect().top;
 
-    if (direction !== lastDirection) {
-        if (direction === 'up') showStickyNav();
-        else hideStickyNav();
-        lastDirection = direction;
+    if (direction === 'down' && navBot.getBoundingClientRect().top <= 0) {
+        pinStickyNav();
     }
 
-    /* Keep the fixed copy until the original nav reaches the same top edge.
-       At this point both copies line up exactly, so the handover is invisible. */
-    if (direction === 'up' && stickyNavVisible && originalNavTop >= 0) {
+    if (stickyNavPinned && direction !== lastDirection) {
+        transitionStickyNav(direction === 'up' ? 0 : -stickyNavTopHeight());
+    }
+
+    if (direction === 'up' && stickyNavPinned &&
+        navBot.getBoundingClientRect().top >= stickyNavTopHeight()) {
         resetStickyNav();
     }
 
+    lastDirection = direction;
     lastScrollY = currentScrollY;
 }, { passive: true });
 
