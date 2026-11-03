@@ -49,13 +49,14 @@ img { display: block; width: 375px; height: auto; }
         <img src="stripe.png" alt="">
         <img src="nav-top.png" alt="">
     </div>
-    <img src="nav-bot.png" alt="">
+    <img id="stickyNavBot" src="nav-bot.png" alt="">
 </div>
 
 <script>
 const navBot = document.getElementById('navBot');
 const stickyNav = document.getElementById('stickyNav');
 const stickyNavTop = document.getElementById('stickyNavTop');
+const stickyNavBot = document.getElementById('stickyNavBot');
 
 let lastScrollY = window.scrollY;
 let lastDirection = null;
@@ -96,6 +97,7 @@ function pinStickyNav() {
     if (stickyNavPinned) return;
 
     stickyNavPinned = true;
+    stickyNavBot.src = 'nav-bot-burger.png';
     stickyNav.classList.add('is-active');
     stickyNav.setAttribute('aria-hidden', 'false');
     stickyNav.style.transform = `translateY(${-stickyNavTopHeight()}px)`;
@@ -103,6 +105,7 @@ function pinStickyNav() {
 
 function resetStickyNav() {
     stickyNavPinned = false;
+    stickyNavBot.src = 'nav-bot.png';
     if (stickyNavAnimation) {
         stickyNavAnimation.cancel();
         stickyNavAnimation = null;
@@ -125,6 +128,9 @@ window.addEventListener('scroll', function () {
     }
 
     if (stickyNavPinned && direction !== lastDirection) {
+        stickyNavBot.src = direction === 'down'
+            ? 'nav-bot-burger.png'
+            : 'nav-bot.png';
         transitionStickyNav(direction === 'up' ? 0 : -stickyNavTopHeight());
     }
 

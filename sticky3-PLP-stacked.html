@@ -122,7 +122,7 @@ img { display: block; width: 375px; height: auto; }
         </div>
     </div>
     <div class="fixed-nav-bot">
-        <img src="nav-bot.png" alt="">
+        <img id="fixedNavBotImage" src="nav-bot.png" alt="">
     </div>
     <div class="fixed-filters">
         <img src="filters.png" alt="">
@@ -137,6 +137,7 @@ const fixedStack = document.getElementById('fixedStack');
 const fixedNav = document.getElementById('fixedNav');
 const fixedNavContent = document.querySelector('.fixed-nav-content');
 const fixedNavBot = document.querySelector('.fixed-nav-bot');
+const fixedNavBotImage = document.getElementById('fixedNavBotImage');
 const fixedFilters = document.querySelector('.fixed-filters');
 
 let lastScrollY = window.scrollY;
@@ -164,6 +165,7 @@ function activateFixedMode() {
     navReleased = false;
     fixedFiltersActive = false;
     lastDirection = 'down';
+    fixedNavBotImage.src = 'nav-bot-burger.png';
 
     originalHeader.classList.add('is-replaced');
     fixedStack.classList.remove(
@@ -184,6 +186,7 @@ function deactivateFixedMode() {
     navReleased = false;
     fixedFiltersActive = false;
     lastDirection = null;
+    fixedNavBotImage.src = 'nav-bot.png';
 
     fixedStack.classList.remove(
         'is-active',
@@ -282,6 +285,9 @@ function handleScroll() {
 
     if (fixedMode) {
         if (direction !== lastDirection) {
+            fixedNavBotImage.src = direction === 'down'
+                ? 'nav-bot-burger.png'
+                : 'nav-bot.png';
             if (direction === 'up') showNav();
             else hideNav();
             lastDirection = direction;
