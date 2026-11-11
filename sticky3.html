@@ -23,6 +23,7 @@ img { display: block; width: 375px; height: auto; }
     pointer-events: none;
     visibility: hidden;
     will-change: transform;
+    transition: transform 300ms ease;
 }
 .sticky-nav.is-active {
     visibility: visible;
@@ -36,7 +37,7 @@ img { display: block; width: 375px; height: auto; }
 
     <div class="nav-wrapper">
         <div class="nav">
-            <img src="nav-top.png" alt="">
+            <img id="navTop" src="nav-top.png" alt="">
             <img id="navBot" src="nav-bot.png" alt="">
         </div>
     </div>
@@ -45,108 +46,47 @@ img { display: block; width: 375px; height: auto; }
 </div>
 
 <div class="sticky-nav" id="stickyNav" aria-hidden="true">
-    <div class="sticky-nav-top" id="stickyNavTop">
-        <img src="stripe.png" alt="">
-        <img src="nav-top.png" alt="">
-    </div>
-    <img id="stickyNavBot" src="nav-bot.png" alt="">
+    <img id="stickyNavImage" src="nav-top.png" alt="">
 </div>
 
 <script>
-const navBot = document.getElementById('navBot');
+const navTop = document.getElementById('navTop');
 const stickyNav = document.getElementById('stickyNav');
-const stickyNavTop = document.getElementById('stickyNavTop');
-const stickyNavBot = document.getElementById('stickyNavBot');
+const stickyNavImage = document.getElementById('stickyNavImage');
 
-let lastScrollY = window.scrollY;
-let lastDirection = null;
 let stickyNavPinned = false;
-let stickyNavAnimation = null;
-
-function stickyNavTopHeight() {
-    return stickyNavTop.getBoundingClientRect().height;
-}
-
-function transitionStickyNav(targetY) {
-    const currentTransform = getComputedStyle(stickyNav).transform;
-    const currentY = currentTransform === 'none'
-        ? -stickyNavTopHeight()
-        : new DOMMatrix(currentTransform).m42;
-
-    if (stickyNavAnimation) stickyNavAnimation.cancel();
-
-    stickyNavAnimation = stickyNav.animate(
-        [
-            { transform: `translateY(${currentY}px)` },
-            { transform: `translateY(${targetY}px)` }
-        ],
-        {
-            duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300,
-            easing: 'ease',
-            fill: 'forwards'
-        }
-    );
-    stickyNavAnimation.onfinish = function () {
-        stickyNav.style.transform = `translateY(${targetY}px)`;
-        stickyNavAnimation.cancel();
-        stickyNavAnimation = null;
-    };
-}
 
 function pinStickyNav() {
-    if (stickyNavPinned) return;
-
     stickyNavPinned = true;
-    stickyNavBot.src = 'nav-bot-burger.png';
     stickyNav.classList.add('is-active');
     stickyNav.setAttribute('aria-hidden', 'false');
-    stickyNav.style.transform = `translateY(${-stickyNavTopHeight()}px)`;
+    stickyNav.style.transform = 'translateY(0)';
 }
 
 function resetStickyNav() {
     stickyNavPinned = false;
-    stickyNavBot.src = 'nav-bot.png';
-    if (stickyNavAnimation) {
-        stickyNavAnimation.cancel();
-        stickyNavAnimation = null;
-    }
+    stickyNavImage.src = 'nav-top.png';
     stickyNav.classList.remove('is-active');
     stickyNav.style.transform = '';
     stickyNav.setAttribute('aria-hidden', 'true');
 }
 
 window.addEventListener('scroll', function () {
-    const currentScrollY = window.scrollY;
-    const delta = currentScrollY - lastScrollY;
+    const navTopPosition = navTop.getBoundingClientRect().top;
 
-    if (Math.abs(delta) < 1) return;
-
-    const direction = delta > 0 ? 'down' : 'up';
-
-    if (direction === 'down' && navBot.getBoundingClientRect().top <= 0) {
+    if (navTopPosition <= 0) {
         pinStickyNav();
-    }
-
-    if (stickyNavPinned && direction !== lastDirection) {
-        stickyNavBot.src = direction === 'down'
+        stickyNavImage.src = navBot.getBoundingClientRect().bottom <= 0
             ? 'nav-bot-burger.png'
-            : 'nav-bot.png';
-        transitionStickyNav(direction === 'up' ? 0 : -stickyNavTopHeight());
-    }
-
-    if (direction === 'up' && stickyNavPinned &&
-        navBot.getBoundingClientRect().top >= stickyNavTopHeight()) {
+            : 'nav-top.png';
+    } else if (stickyNavPinned) {
         resetStickyNav();
     }
 
-    lastDirection = direction;
-    lastScrollY = currentScrollY;
 }, { passive: true });
 
 window.addEventListener('pageshow', function () {
     resetStickyNav();
-    lastScrollY = window.scrollY;
-    lastDirection = null;
 });
 </script>
 </body>

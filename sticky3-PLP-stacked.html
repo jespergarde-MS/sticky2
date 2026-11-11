@@ -20,7 +20,7 @@ img { display: block; width: 375px; height: auto; }
 .filters-wrapper { position: relative; }
 
 /* Keep the original elements in flow while their fixed copies take over. */
-.original-header.is-replaced,
+.original-nav-top.is-replaced,
 .filters-wrapper.is-replaced { visibility: hidden; }
 
 /* Fixed copies preserve the original page layout while they are pinned. */
@@ -52,13 +52,12 @@ img { display: block; width: 375px; height: auto; }
     transition: transform 300ms ease;
 }
 
-.fixed-nav-bot {
-    width: 100%;
+.fixed-stack.nav-released .fixed-nav-content {
+    visibility: hidden;
 }
 
-.fixed-stack.nav-released .fixed-nav-content,
-.fixed-stack.nav-released .fixed-nav-bot img {
-    visibility: hidden;
+.fixed-stack.nav-released .fixed-nav {
+    max-height: 0;
 }
 
 .fixed-stack.nav-visible .fixed-nav {
@@ -94,7 +93,7 @@ img { display: block; width: 375px; height: auto; }
         <img src="stripe.png" alt="">
         <div class="nav-wrapper" id="navWrapper">
             <div class="nav">
-                <img src="nav-top.png" alt="">
+                <img class="original-nav-top" id="navTop" src="nav-top.png" alt="">
                 <img id="navBot" src="nav-bot.png" alt="">
             </div>
         </div>
@@ -117,12 +116,8 @@ img { display: block; width: 375px; height: auto; }
 <div class="fixed-stack" id="fixedStack" aria-hidden="true">
     <div class="fixed-nav" id="fixedNav">
         <div class="fixed-nav-content">
-            <img src="stripe.png" alt="">
-            <img src="nav-top.png" alt="">
+            <img id="fixedNavTopImage" src="nav-top.png" alt="">
         </div>
-    </div>
-    <div class="fixed-nav-bot">
-        <img id="fixedNavBotImage" src="nav-bot.png" alt="">
     </div>
     <div class="fixed-filters">
         <img src="filters.png" alt="">
@@ -130,19 +125,17 @@ img { display: block; width: 375px; height: auto; }
 </div>
 
 <script>
+const navTop = document.getElementById('navTop');
 const navBot = document.getElementById('navBot');
-const originalHeader = document.getElementById('originalHeader');
 const filtersWrapper = document.getElementById('filtersWrapper');
 const fixedStack = document.getElementById('fixedStack');
 const fixedNav = document.getElementById('fixedNav');
 const fixedNavContent = document.querySelector('.fixed-nav-content');
-const fixedNavBot = document.querySelector('.fixed-nav-bot');
-const fixedNavBotImage = document.getElementById('fixedNavBotImage');
+const fixedNavTopImage = document.getElementById('fixedNavTopImage');
 const fixedFilters = document.querySelector('.fixed-filters');
 
 let lastScrollY = window.scrollY;
 let fixedMode = false;
-let navIsVisible = false;
 let navReleased = false;
 let fixedFiltersActive = false;
 let lastDirection = null;
@@ -161,20 +154,21 @@ function activateFixedMode() {
     if (fixedMode) return;
 
     fixedMode = true;
-    navIsVisible = false;
     navReleased = false;
     fixedFiltersActive = false;
     lastDirection = 'down';
-    fixedNavBotImage.src = 'nav-bot-burger.png';
+    fixedNavTopImage.src = navBot.getBoundingClientRect().bottom <= 0
+        ? 'nav-bot-burger.png'
+        : 'nav-top.png';
 
-    originalHeader.classList.add('is-replaced');
+    navTop.classList.add('is-replaced');
     fixedStack.classList.remove(
         'nav-visible',
         'nav-released',
         'filters-active',
         'filters-released'
     );
-    fixedStack.classList.add('is-active');
+    fixedStack.classList.add('is-active', 'nav-visible');
     fixedStack.setAttribute('aria-hidden', 'false');
 }
 
@@ -182,11 +176,10 @@ function deactivateFixedMode() {
     if (!fixedMode) return;
 
     fixedMode = false;
-    navIsVisible = false;
     navReleased = false;
     fixedFiltersActive = false;
     lastDirection = null;
-    fixedNavBotImage.src = 'nav-bot.png';
+    fixedNavTopImage.src = 'nav-top.png';
 
     fixedStack.classList.remove(
         'is-active',
@@ -196,22 +189,9 @@ function deactivateFixedMode() {
         'filters-released'
     );
     fixedStack.setAttribute('aria-hidden', 'true');
-    originalHeader.classList.remove('is-replaced');
+    navTop.classList.remove('is-replaced');
     filtersWrapper.classList.remove('is-replaced');
 }
-
-function showNav() {
-    if (!fixedMode || navIsVisible) return;
-    navIsVisible = true;
-    fixedStack.classList.add('nav-visible');
-}
-
-function hideNav() {
-    if (!fixedMode || !navIsVisible) return;
-    navIsVisible = false;
-    fixedStack.classList.remove('nav-visible');
-}
-
 
 function releaseFiltersToPage() {
     if (!fixedMode || !fixedFiltersActive) return;
@@ -236,7 +216,7 @@ function syncFiltersHandoff(direction) {
     const originalTop = filtersWrapper.getBoundingClientRect().top;
     const fixedTop = fixedFiltersActive
         ? fixedFilters.getBoundingClientRect().top
-        : fixedNav.getBoundingClientRect().height + fixedNavBot.offsetHeight;
+        : fixedNav.getBoundingClientRect().height;
 
     if (direction === 'up' && fixedFiltersActive && originalTop >= fixedTop) {
         releaseFiltersToPage();
@@ -250,18 +230,17 @@ function syncFiltersHandoff(direction) {
 function syncNavHandoff(direction) {
     if (!fixedMode || !direction) return;
 
-    const originalTop = navBot.getBoundingClientRect().top;
-    const fixedTop = fixedNav.getBoundingClientRect().height;
+    const originalTop = navTop.getBoundingClientRect().top;
 
-    if (direction === 'up' && !navReleased && originalTop >= fixedTop) {
+    if (direction === 'up' && !navReleased && originalTop >= 0) {
         navReleased = true;
-        originalHeader.classList.remove('is-replaced');
+        navTop.classList.remove('is-replaced');
         fixedStack.classList.add('nav-released');
     }
 
-    if (direction === 'down' && navReleased && originalTop <= fixedTop) {
+    if (direction === 'down' && navReleased && originalTop <= 0) {
         navReleased = false;
-        originalHeader.classList.add('is-replaced');
+        navTop.classList.add('is-replaced');
         fixedStack.classList.remove('nav-released');
     }
 
@@ -279,19 +258,15 @@ function handleScroll() {
     const direction = delta > 0 ? 'down' : 'up';
 
     if (!fixedMode && direction === 'down' &&
-        navBot.getBoundingClientRect().top <= 0) {
+        navTop.getBoundingClientRect().top <= 0) {
         activateFixedMode();
     }
 
     if (fixedMode) {
-        if (direction !== lastDirection) {
-            fixedNavBotImage.src = direction === 'down'
-                ? 'nav-bot-burger.png'
-                : 'nav-bot.png';
-            if (direction === 'up') showNav();
-            else hideNav();
-            lastDirection = direction;
-        }
+        fixedNavTopImage.src = navBot.getBoundingClientRect().bottom <= 0
+            ? 'nav-bot-burger.png'
+            : 'nav-top.png';
+        lastDirection = direction;
 
         syncNavHandoff(direction);
         syncFiltersHandoff(direction);
