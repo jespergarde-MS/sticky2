@@ -11,6 +11,7 @@ body { overflow-x: hidden; }
 img { display: block; width: 375px; height: auto; }
 .page, .nav-wrapper, .nav { width: 100%; }
 .nav-wrapper { position: relative; }
+.nav-top-is-replaced { visibility: hidden; }
 
 .sticky-nav {
     position: fixed;
@@ -19,11 +20,8 @@ img { display: block; width: 375px; height: auto; }
     width: 100%;
     z-index: 1000;
     background: #fff;
-    transform: translateY(-100%);
     pointer-events: none;
     visibility: hidden;
-    will-change: transform;
-    transition: transform 300ms ease;
 }
 .sticky-nav.is-active {
     visibility: visible;
@@ -51,6 +49,7 @@ img { display: block; width: 375px; height: auto; }
 
 <script>
 const navTop = document.getElementById('navTop');
+const navBot = document.getElementById('navBot');
 const stickyNav = document.getElementById('stickyNav');
 const stickyNavImage = document.getElementById('stickyNavImage');
 
@@ -58,16 +57,16 @@ let stickyNavPinned = false;
 
 function pinStickyNav() {
     stickyNavPinned = true;
+    navTop.classList.add('nav-top-is-replaced');
     stickyNav.classList.add('is-active');
     stickyNav.setAttribute('aria-hidden', 'false');
-    stickyNav.style.transform = 'translateY(0)';
 }
 
 function resetStickyNav() {
     stickyNavPinned = false;
+    navTop.classList.remove('nav-top-is-replaced');
     stickyNavImage.src = 'nav-top.png';
     stickyNav.classList.remove('is-active');
-    stickyNav.style.transform = '';
     stickyNav.setAttribute('aria-hidden', 'true');
 }
 
