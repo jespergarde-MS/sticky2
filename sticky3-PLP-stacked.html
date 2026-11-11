@@ -86,7 +86,7 @@ img { display: block; width: 375px; height: auto; }
     </div>
 
     <div class="scrolling-content">
-        <img src="top.png" alt="">
+        <img id="pageContent" src="top.png" alt="">
 
         <div class="filters-wrapper" id="filtersWrapper">
             <div class="filters">
@@ -112,7 +112,7 @@ img { display: block; width: 375px; height: auto; }
 
 <script>
 const navTop = document.getElementById('navTop');
-const navBot = document.getElementById('navBot');
+const pageContent = document.getElementById('pageContent');
 const filtersWrapper = document.getElementById('filtersWrapper');
 const fixedStack = document.getElementById('fixedStack');
 const fixedNav = document.getElementById('fixedNav');
@@ -143,7 +143,8 @@ function activateFixedMode() {
     navReleased = false;
     fixedFiltersActive = false;
     lastDirection = 'down';
-    fixedNavTopImage.src = navBot.getBoundingClientRect().bottom <= 0
+    fixedNavTopImage.src = pageContent.getBoundingClientRect().top <=
+        fixedNav.getBoundingClientRect().bottom
         ? 'nav-bot-burger.png'
         : 'nav-top.png';
 
@@ -247,7 +248,8 @@ function handleScroll() {
     }
 
     if (fixedMode) {
-        fixedNavTopImage.src = navBot.getBoundingClientRect().bottom <= 0
+        fixedNavTopImage.src = pageContent.getBoundingClientRect().top <=
+            fixedNav.getBoundingClientRect().bottom
             ? 'nav-bot-burger.png'
             : 'nav-top.png';
         lastDirection = direction;
